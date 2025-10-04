@@ -1,0 +1,42 @@
+[package]
+name = "window-cap-mcp"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "window_cap_mcp_lib"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.26.0", features = ["extension-module"], optional = true }
+rmcp = { version = "0.8.0", features = [
+  "macros",
+  "server",
+  "transport-io",
+  "transport-sse-server",
+  "transport-streamable-http-server",
+] }
+xcap = "0.7.1"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+base64 = "0.22"
+image = "0.25"
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+hyper = "1.7"
+hyper-util = { version = "0.1", features = ["tokio", "server", "server-auto"] }
+tower = "0.5"
+
+[features]
+default = []
+python = ["pyo3"]
+
+[[example]]
+name = "rust_library_example"
+path = "examples/rust_library_example.rs"
+
+[[bin]]
+name = "window-cap-mcp"
+path = "src/main.rs"
+required-features = []
