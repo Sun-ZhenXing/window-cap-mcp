@@ -16,3 +16,9 @@ pub struct WindowScreenshotParams {
     /// Window ID
     pub window_id: u32,
 }
+
+#[derive(Serialize, Deserialize, schemars::JsonSchema)]
+pub struct CloseWindowParams {
+    /// Window ID
+    pub window_id: u32,
+}

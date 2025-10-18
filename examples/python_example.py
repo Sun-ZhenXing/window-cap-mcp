@@ -26,7 +26,7 @@ def main():
     # Capture screenshot from primary monitor
     print("2. Capturing screenshot from primary monitor...")
     try:
-        screenshot_base64 = wc.capture_monitor()
+        screenshot_base64 = wc.capture_monitor(None)  # None = primary monitor
         screenshot_data = base64.b64decode(screenshot_base64)
 
         output_path = Path("screenshot_monitor.png")
@@ -79,6 +79,35 @@ def main():
         print("5. Testing to_dict() method...")
         monitor_dict = monitors[0].to_dict()
         print(f"   Monitor dict: {monitor_dict}\n")
+
+    # Demonstrate close_window functionality
+    print("6. Close window demonstration...")
+    print("   The close_window() function allows you to close windows by ID.")
+    print("   It supports Windows (WM_CLOSE), macOS (NSWindow.close), and Linux (X11).\n")
+    print("   Example usage:")
+    print("   ```python")
+    print("   # Find a window you want to close")
+    print("   windows = wc.get_windows()")
+    print("   target_window = windows[0]")
+    print("   ")
+    print("   # Close the window")
+    print("   result = wc.close_window(target_window.id)")
+    print("   print(result)  # 'Successfully closed window: ...'")
+    print("   ```")
+    print()
+    print("   NOTE: Actual window closing is commented out for safety.")
+    print("   Uncomment the code below to test:\n")
+
+    # Uncomment to test close_window (BE CAREFUL!)
+    # if visible_windows:
+    #     target = visible_windows[-1]  # Close last window
+    #     print(f"   Closing: {target.title} (ID: {target.id})")
+    #     try:
+    #         result = wc.close_window(target.id)
+    #         print(f"   ✓ {result}")
+    #     except Exception as e:
+    #         print(f"   ✗ Error: {e}")
+    # print()
 
     print("=== Example completed ===")
 
