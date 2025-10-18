@@ -5,9 +5,6 @@ use windows::Win32::Foundation::HWND;
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::WindowsAndMessaging::{PostMessageW, WM_CLOSE};
 
-#[cfg(target_os = "macos")]
-use cocoa::base::{id, nil};
-
 #[cfg(target_os = "linux")]
 use std::ptr;
 #[cfg(target_os = "linux")]
@@ -79,13 +76,18 @@ pub fn close_window_by_id(window_id: u32) -> Result<(), String> {
 
 #[cfg(target_os = "macos")]
 pub fn close_window_by_id(window_id: u32) -> Result<(), String> {
-    use objc::{msg_send, sel, sel_impl};
+    use objc2::msg_send;
+    use objc2::runtime::AnyObject;
 
     unsafe {
-        let window: id = std::mem::transmute(window_id as usize);
-        if window == nil {
+        let window_ptr = window_id as usize as *mut AnyObject;
+        if window_ptr.is_null() {
             return Err("Invalid window ID".to_string());
         }
+
+        let window = window_ptr
+            .as_ref()
+            .ok_or_else(|| "Invalid window pointer".to_string())?;
 
         let _: () = msg_send![window, close];
     }

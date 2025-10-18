@@ -11,6 +11,12 @@ pub struct WindowCapServer {
     pub tool_router: rmcp::handler::server::tool::ToolRouter<Self>,
 }
 
+impl Default for WindowCapServer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[tool_router]
 impl WindowCapServer {
     pub fn new() -> Self {
@@ -222,10 +228,11 @@ impl WindowCapServer {
         let window_id = params.0.window_id;
 
         // 在阻塞线程中执行关闭窗口操作
-        let result = tokio::task::spawn_blocking(move || window_ops::close_window_with_info(window_id))
-        .await
-        .map_err(|e| McpError::internal_error(format!("Task join error: {}", e), None))?
-        .map_err(|e| McpError::internal_error(e, None))?;
+        let result =
+            tokio::task::spawn_blocking(move || window_ops::close_window_with_info(window_id))
+                .await
+                .map_err(|e| McpError::internal_error(format!("Task join error: {}", e), None))?
+                .map_err(|e| McpError::internal_error(e, None))?;
 
         Ok(CallToolResult::success(vec![Content::text(result)]))
     }
