@@ -165,12 +165,8 @@ def test_close_window_errors():
 
     # Test with invalid window ID
     fake_window_id = 999999999
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(ValueError, match=r"(does not exist|not found)"):
         wc.close_window(fake_window_id)
-
-    assert "does not exist" in str(exc_info.value) or "not found" in str(exc_info.value)
-
-
 def test_close_window_validation():
     """Test close_window with real window (non-destructive)"""
     import window_cap_mcp as wc
