@@ -83,7 +83,9 @@ def main():
     # Demonstrate close_window functionality
     print("6. Close window demonstration...")
     print("   The close_window() function allows you to close windows by ID.")
-    print("   It supports Windows (WM_CLOSE), macOS (NSWindow.close), and Linux (X11).\n")
+    print(
+        "   It supports Windows (WM_CLOSE), macOS (NSWindow.close), and Linux (X11).\n"
+    )
     print("   Example usage:")
     print("   ```python")
     print("   # Find a window you want to close")
