@@ -227,7 +227,7 @@ impl WindowCapServer {
     ) -> Result<CallToolResult, McpError> {
         let window_id = params.0.window_id;
 
-        // 在阻塞线程中执行关闭窗口操作
+        // Perform the close window operation in a blocking thread
         let result =
             tokio::task::spawn_blocking(move || window_ops::close_window_with_info(window_id))
                 .await
