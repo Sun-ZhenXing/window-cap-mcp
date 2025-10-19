@@ -1,4 +1,5 @@
 use crate::models::*;
+use crate::utils::window_ops;
 use rmcp::{
     handler::server::wrapper::Parameters, model::*, tool, tool_handler, tool_router,
     ErrorData as McpError, ServerHandler,
@@ -8,6 +9,12 @@ use xcap::{Monitor, Window};
 #[derive(Clone)]
 pub struct WindowCapServer {
     pub tool_router: rmcp::handler::server::tool::ToolRouter<Self>,
+}
+
+impl Default for WindowCapServer {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[tool_router]
@@ -211,6 +218,23 @@ impl WindowCapServer {
             Content::text(result.0),
             Content::image(result.1, "image/png".to_string()),
         ]))
+    }
+
+    #[tool(description = "Close a window")]
+    async fn close_window(
+        &self,
+        params: Parameters<CloseWindowParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let window_id = params.0.window_id;
+
+        // Perform the close window operation in a blocking thread
+        let result =
+            tokio::task::spawn_blocking(move || window_ops::close_window_with_info(window_id))
+                .await
+                .map_err(|e| McpError::internal_error(format!("Task join error: {}", e), None))?
+                .map_err(|e| McpError::internal_error(e, None))?;
+
+        Ok(CallToolResult::success(vec![Content::text(result)]))
     }
 }
 

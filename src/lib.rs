@@ -2,6 +2,7 @@ pub mod cli;
 pub mod handler;
 pub mod models;
 pub mod server;
+pub mod utils;
 
 // Python bindings (optional feature)
 #[cfg(feature = "python")]

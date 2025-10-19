@@ -32,6 +32,7 @@ from .window_cap_mcp import (
     get_windows,
     get_window_count,
     capture_window,
+    close_window,
     run_server,
 )
 
@@ -46,5 +47,6 @@ __all__ = [
     "get_windows",
     "get_window_count",
     "capture_window",
+    "close_window",
     "run_server",
 ]

@@ -20,7 +20,7 @@ build-example:
 	@echo "Rust example built successfully"
 	@echo ""
 
-# Build Python library (requires maturin)
+# Build Python library
 build-python:
 	@echo "=== Building Python library ==="
 	uv build

@@ -8,6 +8,7 @@ A cross-platform window screenshot MCP server and library implemented in Rust, b
 - ✅ Capture screenshots of specified monitors
 - ✅ Get list of all windows
 - ✅ Capture screenshots of specified windows
+- ✅ Close windows by ID
 - ✅ Cross-platform support (Windows, macOS, Linux)
 - ✅ Base64-encoded PNG format screenshots
 - ✅ Support for multiple transport modes (STDIO, SSE, HTTP Streamable)
@@ -265,6 +266,31 @@ Capture a screenshot of a specified window (Base64-encoded PNG format).
   "format": "png"
 }
 ```
+
+### 5. close_window
+
+Close a window by its ID. This tool sends a close request to the specified window.
+
+**Parameters**:
+
+- `window_id` (required): Window ID to close
+
+**Returns**:
+
+```json
+{
+  "success": true,
+  "message": "Successfully closed window: VS Code [Code.exe] (ID: 12345)"
+}
+```
+
+**Platform Support**:
+
+- ✅ Windows: Uses `WM_CLOSE` message
+- ✅ macOS: Uses Cocoa NSWindow close method
+- ✅ Linux: Uses X11 `WM_DELETE_WINDOW` protocol
+
+**Note**: This sends a polite close request to the window. The application can choose to ignore it (e.g., if there are unsaved changes).
 
 ## Claude Desktop Configuration
 

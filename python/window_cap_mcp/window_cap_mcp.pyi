@@ -72,6 +72,31 @@ def capture_window(window_id: int) -> str:
     """
     ...
 
+def close_window(window_id: int) -> str:
+    """
+    Close a window by its ID
+
+    Args:
+        window_id: Window ID to close
+
+    Returns:
+        Success message
+
+    Raises:
+        ValueError: If the window does not exist
+        RuntimeError: If closing the window fails
+
+    Note:
+        This sends a polite close request to the window. The application
+        can choose to ignore it (e.g., if there are unsaved changes).
+
+    Platform Support:
+        - Windows: Uses WM_CLOSE message
+        - macOS: Uses Cocoa NSWindow close method
+        - Linux: Uses X11 WM_DELETE_WINDOW protocol
+    """
+    ...
+
 def run_server(
     sse: bool = False,
     http: bool = False,

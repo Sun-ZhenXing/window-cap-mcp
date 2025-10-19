@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "window-cap-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "A cross-platform window capture library for Python"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -40,7 +40,6 @@ bindings = "pyo3"
 
 [dependency-groups]
 dev = [
-    "maturin>=1.9.5",
     "pytest>=8.3.5",
     "ruff>=0.13.3",
 ]

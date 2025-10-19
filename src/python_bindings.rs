@@ -1,3 +1,4 @@
+use crate::utils::window_ops;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use std::sync::Arc;
@@ -261,6 +262,37 @@ fn capture_window(window_id: u32) -> PyResult<String> {
     Ok(base64_image)
 }
 
+/// Close a window by its ID
+///
+/// Args:
+///     window_id: Window ID to close
+///
+/// Returns:
+///     Success message
+///
+/// Raises:
+///     PyValueError: If the window does not exist
+///     PyRuntimeError: If closing the window fails
+///
+/// Note:
+///     This sends a polite close request to the window. The application
+///     can choose to ignore it (e.g., if there are unsaved changes).
+///
+/// Platform Support:
+///     - Windows: Uses WM_CLOSE message
+///     - macOS: Uses Cocoa NSWindow close method
+///     - Linux: Uses X11 WM_DELETE_WINDOW protocol
+#[pyfunction]
+fn close_window(window_id: u32) -> PyResult<String> {
+    window_ops::close_window_with_info(window_id).map_err(|e| {
+        if e.contains("does not exist") || e.contains("not found") {
+            PyErr::new::<pyo3::exceptions::PyValueError, _>(e)
+        } else {
+            PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e)
+        }
+    })
+}
+
 /// Run the MCP server with specified options
 ///
 /// Args:
@@ -418,6 +450,7 @@ fn run_server(py: Python, sse: bool, http: bool, port: u16, host: String) -> PyR
 ///     get_windows() -> List[PyWindow]: Get list of all windows
 ///     get_window_count() -> int: Get count of windows
 ///     capture_window(window_id: int) -> str: Capture screenshot from window (returns base64 PNG)
+///     close_window(window_id: int) -> str: Close a window by its ID
 ///     run_server(sse: bool = False, http: bool = False, port: int = 8080, host: str = "127.0.0.1") -> None: Run MCP server
 #[pymodule]
 fn window_cap_mcp(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -427,6 +460,7 @@ fn window_cap_mcp(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(get_windows, m)?)?;
     m.add_function(wrap_pyfunction!(get_window_count, m)?)?;
     m.add_function(wrap_pyfunction!(capture_window, m)?)?;
+    m.add_function(wrap_pyfunction!(close_window, m)?)?;
     m.add_function(wrap_pyfunction!(run_server, m)?)?;
     m.add_class::<PyMonitor>()?;
     m.add_class::<PyWindow>()?;
