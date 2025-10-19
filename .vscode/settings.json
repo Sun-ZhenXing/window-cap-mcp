@@ -7,6 +7,12 @@
     "makefile.configureOnOpen": false,
     "cSpell.words": [
         "maturin",
-        "pytest"
+        "pyfunction",
+        "pymodule",
+        "pytest",
+        "rmcp",
+        "schemars",
+        "streamable",
+        "xcap"
     ]
 }
