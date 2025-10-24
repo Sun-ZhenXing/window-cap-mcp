@@ -43,7 +43,11 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwayland-dev libxrandr-dev libxcb1-dev libgbm-dev
+          sudo apt-get install -y libwayland-dev libxrandr-dev libxcb1-dev \
+            libpipewire-0.3-dev pipewire \
+            libavcodec-dev libavformat-dev libavutil-dev \
+            libswscale-dev libasound2-dev \
+            libegl1-mesa-dev
 
       - name: Install cross-compilation tools (Linux ARM64)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
@@ -193,10 +197,10 @@ jobs:
 
             ### Python Package
 
-            **Python 3.12 only**. Download the wheel file for your platform:
+            **Supported Python versions: 3.8–3.12**. Download the wheel file for your platform and Python version:
 
             ```bash
-            pip install window-cap-mcp-${{ steps.get_version.outputs.VERSION }}-cp312-cp312-<platform>.whl
+            pip install window-cap-mcp-${{ steps.get_version.outputs.VERSION }}-cp<pyver>-cp<pyver>-<platform>.whl
             ```
 
             Replace `<platform>` with your platform identifier (e.g., `win_amd64`, `manylinux_2_17_x86_64`, `macosx_11_0_arm64`).
