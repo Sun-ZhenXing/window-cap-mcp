@@ -43,7 +43,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwayland-dev libxrandr-dev libxcb1-dev \
+          sudo apt-get install -y pkg-config libwayland-dev libxrandr-dev libxcb1-dev libgbm-dev \
             libpipewire-0.3-dev pipewire \
             libavcodec-dev libavformat-dev libavutil-dev \
             libswscale-dev libasound2-dev \
@@ -52,7 +52,11 @@ jobs:
       - name: Install cross-compilation tools (Linux ARM64)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
-          sudo apt-get install -y gcc-aarch64-linux-gnu
+          sudo dpkg --add-architecture arm64
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu pkg-config-aarch64-linux-gnu \
+            libpipewire-0.3-dev:arm64 libwayland-dev:arm64 libxkbcommon-dev:arm64 \
+            libgbm-dev:arm64 libxcb1-dev:arm64 libxrandr-dev:arm64
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
@@ -63,10 +67,11 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Build binary
-        run: cargo build --release --target ${{ matrix.target }} --no-default-features --bin window-cap-mcp
+        run: cargo build --release --target ${{ matrix.target }} --bin window-cap-mcp
         env:
-          # Ensure PyO3 does not attempt to probe/link against Python when building the standalone CLI
-          PYO3_NO_PYTHON: '1'
+          PKG_CONFIG: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-pkg-config' || '' }}
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-gcc' || '' }}
+          PKG_CONFIG_PATH: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig' || '' }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -109,12 +114,17 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwayland-dev libxrandr-dev libxcb1-dev libgbm-dev
+          sudo apt-get install -y pkg-config libwayland-dev libxrandr-dev libxcb1-dev libgbm-dev \
+            libpipewire-0.3-dev pipewire libxkbcommon-dev
 
       - name: Install cross-compilation tools (Linux ARM64)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
-          sudo apt-get install -y gcc-aarch64-linux-gnu
+          sudo dpkg --add-architecture arm64
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu pkg-config-aarch64-linux-gnu \
+            libpipewire-0.3-dev:arm64 libwayland-dev:arm64 libxkbcommon-dev:arm64 \
+            libgbm-dev:arm64 libxcb1-dev:arm64 libxrandr-dev:arm64
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -139,6 +149,9 @@ jobs:
         env:
           CARGO_BUILD_TARGET: ${{ matrix.target }}
           PYO3_CROSS_LIB_DIR: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu' || '' }}
+          PKG_CONFIG: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-pkg-config' || '' }}
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-gcc' || '' }}
+          PKG_CONFIG_PATH: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig' || '' }}
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
