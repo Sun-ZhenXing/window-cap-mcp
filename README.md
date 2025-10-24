@@ -4,80 +4,64 @@ A cross-platform window screenshot MCP server and library implemented in Rust, b
 
 ## Features
 
-- ✅ Get monitor count and details
-- ✅ Capture screenshots of specified monitors
-- ✅ Get list of all windows
-- ✅ Capture screenshots of specified windows
-- ✅ Close windows by ID
-- ✅ Cross-platform support (Windows, macOS, Linux)
-- ✅ Base64-encoded PNG format screenshots
-- ✅ Support for multiple transport modes (STDIO, SSE, HTTP Streamable)
-- ✨ **Provides both Rust library and Python library**
+- Get monitor count and details
+- Capture screenshots of monitors and windows
+- List and close windows
+- Cross-platform support (Windows, macOS, Linux)
+- Supports multiple transport modes (STDIO, SSE, HTTP)
+- Available as Rust library and Python package
 
-## What's New in v0.2.0
+## Installation
 
-🎉 **Python Native Server API**: You can now run the MCP server directly from Python without needing a separate Rust binary!
+### As MCP Server
+
+```bash
+# Build from source
+make build
+make run
+```
+
+### As Python Package
+
+```bash
+pip install window-cap-mcp
+```
+
+### As Rust Library
+
+```toml
+[dependencies]
+window_cap_mcp_lib = "0.1"
+```
+
+## Usage
+
+### MCP Server
+
+```bash
+# STDIO mode (for Claude Desktop)
+window-cap-mcp
+
+# SSE mode
+window-cap-mcp --sse --port 3000
+
+# HTTP mode
+window-cap-mcp --http --port 8080
+```
+
+### Python Library
 
 ```python
 import window_cap_mcp as wc
 
-# Run server in Python
-wc.run_server()                          # STDIO mode
-wc.run_server(sse=True, port=8080)      # SSE mode
-wc.run_server(http=True, port=3000)     # HTTP mode
+# Capture monitor screenshot
+screenshot = wc.capture_monitor()
+
+# Run as MCP server
+wc.run_server()
 ```
 
-Benefits:
-
-- ✅ Install once with pip - no additional compilation needed
-- ✅ Works out of the box on all platforms
-- ✅ Easy to integrate into Python scripts
-- ✅ Same performance as the Rust binary
-
-## Usage
-
-This project offers three usage modes:
-
-1. **MCP Server**: Run as an MCP server, can be integrated with clients like Claude Desktop
-2. **Rust Library**: Use as a Rust crate in other Rust projects
-3. **Python Library**: Use in Python projects through Python bindings
-
-## Quick Start
-
-### Requirements
-
-- [Rust](https://rustup.rs/) - Rust toolchain
-- [uv](https://docs.astral.sh/uv/) - Python package manager (for Python library development)
-- `make` - Build tool (Windows users can install via [Chocolatey](https://chocolatey.org/): `choco install make`)
-
-### Building the Project
-
-```bash
-# View all available commands
-make help
-
-# Build all components
-make
-
-# Run MCP server
-make run
-```
-
-## Usage Instructions
-
-### 1. MCP Server Mode
-
-```bash
-# Build and run
-make run
-
-# Or run manually
-./target/release/window-cap-mcp          # STDIO mode (for Claude Desktop)
-./target/release/window-cap-mcp --sse    # SSE HTTP server mode
-./target/release/window-cap-mcp --http   # HTTP Streamable mode
-```
-
-### 2. Rust Library Mode
+### Rust Library
 
 ```rust
 use window_cap_mcp_lib::{Monitor, Window};
@@ -89,54 +73,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-Run example: `make run-example`
+## Claude Desktop Configuration
 
-### 3. Python Library Mode
+Edit the configuration file:
 
-```bash
-# Build and install
-make install-python
-```
-
-```python
-import window_cap_mcp as wc
-import base64
-
-screenshot = wc.capture_monitor()
-data = base64.b64decode(screenshot)
-with open("screenshot.png", "wb") as f:
-    f.write(data)
-```
-
-Run example: `uv run python examples/python_example.py`
-
-#### Using Python CLI
-
-After installing the Python package, you can use the `window-cap-mcp` command directly:
-
-```bash
-# Run in STDIO mode (default, for Claude Desktop integration)
-window-cap-mcp
-
-# Run in SSE mode on custom host/port
-window-cap-mcp --sse --host 0.0.0.0 --port 3000
-
-# Run in HTTP Streamable mode
-window-cap-mcp --http --port 8080
-
-# View help
-window-cap-mcp --help
-```
-
-Or use it as a Python module:
-
-```bash
-python -m window_cap_mcp --help
-```
-
-**Claude Desktop Configuration for Python Package**:
-
-After installing via `pip install window-cap-mcp`, update your Claude Desktop config:
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **macOS/Linux**: `~/.config/Claude/claude_desktop_config.json`
 
 ```json
 {
@@ -148,28 +90,11 @@ After installing via `pip install window-cap-mcp`, update your Claude Desktop co
 }
 ```
 
-Or specify the full Python path:
+## MCP Tools
 
-```json
-{
-  "mcpServers": {
-    "window-cap": {
-      "command": "python",
-      "args": ["-m", "window_cap_mcp"]
-    }
-  }
-}
-```
+### get_monitor_count
 
-## MCP Tool Functions
-
-### 1. get_monitor_count
-
-Get monitor count and details.
-
-**Parameters**: None
-
-**Returns**:
+Get monitor information.
 
 ```json
 {
@@ -178,53 +103,23 @@ Get monitor count and details.
     {
       "index": 0,
       "name": "Display 1",
-      "x": 0,
-      "y": 0,
       "width": 1920,
       "height": 1080,
       "is_primary": true
-    },
-    {
-      "index": 1,
-      "name": "Display 2",
-      "x": 1920,
-      "y": 0,
-      "width": 1920,
-      "height": 1080,
-      "is_primary": false
     }
   ]
 }
 ```
 
-### 2. get_screen_screenshot
+### get_screen_screenshot
 
-Capture a screenshot of a specified monitor (Base64-encoded PNG format).
+Capture monitor screenshot (Base64-encoded PNG).
 
-**Parameters**:
+**Parameters**: `monitor_index` (optional)
 
-- `monitor_index` (optional): Monitor index, defaults to primary monitor if not specified
+### get_window_list
 
-**Returns**:
-
-```json
-{
-  "monitor_index": 0,
-  "monitor_name": "Display 1",
-  "width": 1920,
-  "height": 1080,
-  "image_base64": "iVBORw0KGgoAAAANSUhEUgA...",
-  "format": "png"
-}
-```
-
-### 3. get_window_list
-
-Get a list of all windows.
-
-**Parameters**: None
-
-**Returns**:
+Get all windows information.
 
 ```json
 {
@@ -234,90 +129,32 @@ Get a list of all windows.
       "id": 12345,
       "title": "VS Code",
       "app_name": "Code.exe",
-      "x": 100,
-      "y": 100,
       "width": 1280,
-      "height": 720,
-      "is_minimized": false,
-      "is_maximized": false
+      "height": 720
     }
   ]
 }
 ```
 
-### 4. get_window_screenshot
+### get_window_screenshot
 
-Capture a screenshot of a specified window (Base64-encoded PNG format).
+Capture window screenshot (Base64-encoded PNG).
 
-**Parameters**:
+**Parameters**: `window_id` (required)
 
-- `window_id` (required): Window ID
+### close_window
 
-**Returns**:
+Close a window by ID.
 
-```json
-{
-  "window_id": 12345,
-  "title": "VS Code",
-  "app_name": "Code.exe",
-  "width": 1280,
-  "height": 720,
-  "image_base64": "iVBORw0KGgoAAAANSUhEUgA...",
-  "format": "png"
-}
-```
+**Parameters**: `window_id` (required)
 
-### 5. close_window
-
-Close a window by its ID. This tool sends a close request to the specified window.
-
-**Parameters**:
-
-- `window_id` (required): Window ID to close
-
-**Returns**:
-
-```json
-{
-  "success": true,
-  "message": "Successfully closed window: VS Code [Code.exe] (ID: 12345)"
-}
-```
-
-**Platform Support**:
-
-- ✅ Windows: Uses `WM_CLOSE` message
-- ✅ macOS: Uses Cocoa NSWindow close method
-- ✅ Linux: Uses X11 `WM_DELETE_WINDOW` protocol
-
-**Note**: This sends a polite close request to the window. The application can choose to ignore it (e.g., if there are unsaved changes).
-
-## Claude Desktop Configuration
-
-Edit the configuration file and add the following:
-
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-- **macOS/Linux**: `~/.config/Claude/claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "window-cap": {
-      "command": "<PATH_TO_BINARY>"
-    }
-  }
-}
-```
-
-## Development Commands
+## Development
 
 ```bash
-make help          # View all commands
-make build         # Build all components
+make help          # View commands
+make build         # Build project
 make test          # Run tests
-make fmt           # Format code
-make check         # Check code
-make clean         # Clean build artifacts
+make clean         # Clean artifacts
 ```
 
 ## License
