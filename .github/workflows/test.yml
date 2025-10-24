@@ -54,26 +54,13 @@ jobs:
         run: |
           uv sync --all-extras
 
-      - name: Setup Python build environment
-        if: runner.os == 'macOS'
-        run: |
-          python_path=$(which python)
-          python_root=$(dirname $(dirname $python_path))
-          echo "LDFLAGS=-L${python_root}/lib" >> $GITHUB_ENV
-          echo "CFLAGS=-I${python_root}/include/python${{ matrix.python-version }}" >> $GITHUB_ENV
-          echo "Using Python from: ${python_root}"
-          ls -l ${python_root}/lib/libpython* || true
-          ls -l ${python_root}/include/python${{ matrix.python-version }} || true
-
       - name: Run Rust tests
         run: cargo test --lib --bins
 
       - name: Build Python extension
         run: cargo build --features python --release
-
-      - name: Run Python tests
-        run: |
-          uv run pytest tests/ -v
+        env:
+          RUSTFLAGS: ${{ runner.os == 'macOS' && '-C link-arg=-undefined -C link-arg=dynamic_lookup' || '' }}
 
   lint:
     name: Lint

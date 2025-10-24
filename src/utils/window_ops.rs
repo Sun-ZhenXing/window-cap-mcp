@@ -107,12 +107,12 @@ pub fn close_window_by_id(window_id: u32) -> Result<(), String> {
         // Send WM_DELETE_WINDOW message
         let wm_protocols = xlib::XInternAtom(
             display,
-            b"WM_PROTOCOLS\0".as_ptr() as *const i8,
+            c"WM_PROTOCOLS".as_ptr(),
             xlib::False,
         );
         let wm_delete_window = xlib::XInternAtom(
             display,
-            b"WM_DELETE_WINDOW\0".as_ptr() as *const i8,
+            c"WM_DELETE_WINDOW".as_ptr(),
             xlib::False,
         );
 
