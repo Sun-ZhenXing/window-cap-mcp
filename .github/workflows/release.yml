@@ -1,0 +1,215 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-rust:
+    name: Build Rust Binary - ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: window-cap-mcp
+            asset_name: window-cap-mcp-linux-x86_64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact_name: window-cap-mcp
+            asset_name: window-cap-mcp-linux-aarch64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: window-cap-mcp.exe
+            asset_name: window-cap-mcp-windows-x86_64.exe
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: window-cap-mcp
+            asset_name: window-cap-mcp-macos-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: window-cap-mcp
+            asset_name: window-cap-mcp-macos-aarch64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libwayland-dev libxrandr-dev libxcb1-dev libgbm-dev \
+            libpipewire-0.3-dev pipewire \
+            libavcodec-dev libavformat-dev libavutil-dev \
+            libswscale-dev libasound2-dev \
+            libegl1-mesa-dev
+
+      - name: Install cross-compilation tools (Linux ARM64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo dpkg --add-architecture arm64
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu pkg-config-aarch64-linux-gnu \
+            libpipewire-0.3-dev:arm64 libwayland-dev:arm64 libxkbcommon-dev:arm64 \
+            libgbm-dev:arm64 libxcb1-dev:arm64 libxrandr-dev:arm64
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build binary
+        run: cargo build --release --target ${{ matrix.target }} --bin window-cap-mcp
+        env:
+          PKG_CONFIG: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-pkg-config' || '' }}
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-gcc' || '' }}
+          PKG_CONFIG_PATH: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig' || '' }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+
+  build-python:
+    name: Build Python Wheel - ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          # Linux
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform: linux-x86_64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            platform: linux-aarch64
+          # Windows
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: windows-x86_64
+          - os: windows-latest
+            target: i686-pc-windows-msvc
+            platform: windows-i686
+          # macOS
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            platform: macos-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            platform: macos-aarch64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libwayland-dev libxrandr-dev libxcb1-dev libgbm-dev \
+            libpipewire-0.3-dev pipewire libxkbcommon-dev
+
+      - name: Install cross-compilation tools (Linux ARM64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo dpkg --add-architecture arm64
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu pkg-config-aarch64-linux-gnu \
+            libpipewire-0.3-dev:arm64 libwayland-dev:arm64 libxkbcommon-dev:arm64 \
+            libgbm-dev:arm64 libxcb1-dev:arm64 libxrandr-dev:arm64
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Build wheel with uv
+        run: uv build --wheel
+        env:
+          RUSTFLAGS: ${{ runner.os == 'macOS' && '-C link-arg=-undefined -C link-arg=dynamic_lookup' || '' }}
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.platform }}
+          path: dist/*.whl
+
+  create-release:
+    name: Create Release
+    needs: [build-rust, build-python]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          # Copy Rust binaries
+          find artifacts -type f ! -name "*.whl" -exec cp {} release-assets/ \;
+          # Copy Python wheels
+          find artifacts -type f -name "*.whl" -exec cp {} release-assets/ \;
+          ls -lh release-assets
+
+      - name: Extract version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release v${{ steps.get_version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+          files: release-assets/*
+          generate_release_notes: true
+          body: |
+            ## Installation
+
+            ### Rust Binary
+
+            Download the appropriate binary for your platform:
+            - Linux x86_64: `window-cap-mcp-linux-x86_64`
+            - Linux ARM64: `window-cap-mcp-linux-aarch64`
+            - Windows x86_64: `window-cap-mcp-windows-x86_64.exe`
+            - macOS x86_64: `window-cap-mcp-macos-x86_64`
+            - macOS ARM64 (Apple Silicon): `window-cap-mcp-macos-aarch64`
+
+            ### Python Package
+
+            **Supported Python versions: 3.8–3.12**. Download the wheel file for your platform and Python version:
+
+            ```bash
+            pip install window-cap-mcp-${{ steps.get_version.outputs.VERSION }}-cp<pyver>-cp<pyver>-<platform>.whl
+            ```
+
+            Replace `<platform>` with your platform identifier (e.g., `win_amd64`, `manylinux_2_17_x86_64`, `macosx_11_0_arm64`).
