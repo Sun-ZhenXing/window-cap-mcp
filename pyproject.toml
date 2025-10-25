@@ -39,6 +39,17 @@ module-name = "window_cap_mcp"
 python-source = "python"
 bindings = "pyo3"
 
+[tool.cibuildwheel]
+build = "cp39-* cp310-* cp311-* cp312-* cp313-*"
+skip = "pp* *-win32"
+before-build = "pip install maturin"
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux_2_17"
+
+[tool.cibuildwheel.macos]
+before-build = "pip install maturin && brew install pkg-config"
+
 [dependency-groups]
 dev = [
     "pytest>=8.3.5",

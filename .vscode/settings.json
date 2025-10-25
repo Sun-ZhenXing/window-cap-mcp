@@ -6,6 +6,7 @@
     "python.testing.pytestEnabled": true,
     "makefile.configureOnOpen": false,
     "cSpell.words": [
+        "cibuildwheel",
         "maturin",
         "pyfunction",
         "pymodule",
