@@ -41,11 +41,12 @@ bindings = "pyo3"
 
 [tool.cibuildwheel]
 build = "cp39-* cp310-* cp311-* cp312-* cp313-*"
-skip = "pp* *-win32"
+skip = "*-win32"
 before-build = "pip install maturin"
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux_2_17"
+environment = { PKG_CONFIG_ALLOW_CROSS = "1" }
 
 [tool.cibuildwheel.macos]
 before-build = "pip install maturin && brew install pkg-config"

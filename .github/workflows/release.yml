@@ -104,6 +104,14 @@ jobs:
             libavcodec-dev libavformat-dev libavutil-dev \
             libswscale-dev libasound2-dev \
             libegl1-mesa-dev
+          # Additional dependencies for cross-compilation
+          if [ "${{ matrix.target }}" = "aarch64-unknown-linux-gnu" ]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu pkg-config-aarch64-linux-gnu \
+              libwayland-dev:arm64 libxrandr-dev:arm64 libxcb1-dev:arm64 libgbm-dev:arm64 \
+              libxkbcommon-dev:arm64 libpipewire-0.3-dev:arm64 libasound2-dev:arm64
+            sudo dpkg --add-architecture arm64
+            sudo apt-get update || true
+          fi
 
       - name: Install system dependencies (macOS)
         if: runner.os == 'macOS'
@@ -120,6 +128,10 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Set up additional Rust targets (macOS)
+        if: runner.os == 'macOS'
+        run: rustup target add x86_64-apple-darwin aarch64-apple-darwin
+
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
 
@@ -132,6 +144,8 @@ jobs:
           CIBW_ARCHS_MACOS: x86_64,arm64
           CIBW_ARCHS_LINUX: x86_64,aarch64
           CIBW_ARCHS_WINDOWS: auto32,auto64
+          CIBW_BUILD_VERBOSITY: 2
+          CIBW_ENVIRONMENT_LINUX: "PKG_CONFIG_ALLOW_CROSS=1"
           RUSTFLAGS: ${{ runner.os == 'macOS' && '-C link-arg=-undefined -C link-arg=dynamic_lookup' || '' }}
 
       - name: Build source distribution
