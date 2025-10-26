@@ -19,10 +19,6 @@ jobs:
             target: x86_64-unknown-linux-gnu
             artifact_name: window-cap-mcp
             asset_name: window-cap-mcp-linux-x86_64
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            artifact_name: window-cap-mcp
-            asset_name: window-cap-mcp-linux-aarch64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             artifact_name: window-cap-mcp.exe
@@ -49,22 +45,6 @@ jobs:
             libswscale-dev libasound2-dev \
             libegl1-mesa-dev
 
-      - name: Install system dependencies (Linux aarch64 cross)
-        if: runner.os == 'Linux' && matrix.target == 'aarch64-unknown-linux-gnu'
-        run: |
-          sudo dpkg --add-architecture arm64
-          sudo apt-get update
-          # Toolchain + pkg-config wrapper for aarch64
-          sudo apt-get install -y gcc-aarch64-linux-gnu pkg-config-aarch64-linux-gnu
-          # Wayland/X/GBM/PipeWire/FFmpeg/ALSA/EGL headers for ARM64 target (provide .pc files)
-          sudo apt-get install -y \
-            libwayland-dev:arm64 wayland-protocols:arm64 \
-            libxrandr-dev:arm64 libxcb1-dev:arm64 libgbm-dev:arm64 libxkbcommon-dev:arm64 \
-            libpipewire-0.3-dev:arm64 pipewire:arm64 \
-            libavcodec-dev:arm64 libavformat-dev:arm64 libavutil-dev:arm64 libswscale-dev:arm64 \
-            libasound2-dev:arm64 \
-            libegl1-mesa-dev:arm64
-
       - name: Install system dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
@@ -78,27 +58,10 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
 
-      - name: Build Python extension (non-cross)
-        if: matrix.target != 'aarch64-unknown-linux-gnu'
+      - name: Build Python extension
         run: cargo build --features python --release --target ${{ matrix.target }}
         env:
           RUSTFLAGS: ${{ runner.os == 'macOS' && '-C link-arg=-undefined -C link-arg=dynamic_lookup' || '' }}
-
-      - name: Build Python extension (aarch64 cross)
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: cargo build --features python --release --target ${{ matrix.target }}
-        env:
-          # macOS keeps its own flags logic; for Linux aarch64 this is ignored
-          RUSTFLAGS: ${{ runner.os == 'macOS' && '-C link-arg=-undefined -C link-arg=dynamic_lookup' || '' }}
-          # Cross toolchain wiring
-          CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
-          AR_aarch64_unknown_linux_gnu: aarch64-linux-gnu-ar
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-          # pkg-config cross settings
-          PKG_CONFIG: aarch64-linux-gnu-pkg-config
-          PKG_CONFIG_ALLOW_CROSS: "1"
-          PKG_CONFIG_PATH: /usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
-          PKG_CONFIG_SYSROOT_DIR: /
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -116,9 +79,6 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             platform: linux-x86_64
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            platform: linux-aarch64
           # Windows
           - os: windows-latest
             target: x86_64-pc-windows-msvc
@@ -147,22 +107,6 @@ jobs:
             libswscale-dev libasound2-dev \
             libegl1-mesa-dev
 
-      - name: Install system dependencies (Linux aarch64 cross)
-        if: runner.os == 'Linux' && matrix.target == 'aarch64-unknown-linux-gnu'
-        run: |
-          sudo dpkg --add-architecture arm64
-          sudo apt-get update
-          # Toolchain + pkg-config wrapper for aarch64
-          sudo apt-get install -y gcc-aarch64-linux-gnu pkg-config-aarch64-linux-gnu
-          # Wayland/X/GBM/PipeWire/FFmpeg/ALSA/EGL headers for ARM64 target (provide .pc files)
-          sudo apt-get install -y \
-            libwayland-dev:arm64 wayland-protocols:arm64 \
-            libxrandr-dev:arm64 libxcb1-dev:arm64 libgbm-dev:arm64 libxkbcommon-dev:arm64 \
-            libpipewire-0.3-dev:arm64 pipewire:arm64 \
-            libavcodec-dev:arm64 libavformat-dev:arm64 libavutil-dev:arm64 libswscale-dev:arm64 \
-            libasound2-dev:arm64 \
-            libegl1-mesa-dev:arm64
-
       - name: Install system dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
@@ -186,24 +130,10 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Build wheel with uv (non-cross)
-        if: matrix.target != 'aarch64-unknown-linux-gnu'
+      - name: Build wheel with uv
         run: uv build --wheel
         env:
           RUSTFLAGS: ${{ runner.os == 'macOS' && '-C link-arg=-undefined -C link-arg=dynamic_lookup' || '' }}
-
-      - name: Build wheel with uv (aarch64 cross)
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: uv build --wheel
-        env:
-          RUSTFLAGS: ${{ runner.os == 'macOS' && '-C link-arg=-undefined -C link-arg=dynamic_lookup' || '' }}
-          CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
-          AR_aarch64_unknown_linux_gnu: aarch64-linux-gnu-ar
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-          PKG_CONFIG: aarch64-linux-gnu-pkg-config
-          PKG_CONFIG_ALLOW_CROSS: "1"
-          PKG_CONFIG_PATH: /usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
-          PKG_CONFIG_SYSROOT_DIR: /
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
@@ -255,7 +185,6 @@ jobs:
 
             Download the appropriate binary for your platform:
             - Linux x86_64: `window-cap-mcp-linux-x86_64`
-            - Linux ARM64: `window-cap-mcp-linux-aarch64`
             - Windows x86_64: `window-cap-mcp-windows-x86_64.exe`
             - macOS x86_64: `window-cap-mcp-macos-x86_64`
             - macOS ARM64 (Apple Silicon): `window-cap-mcp-macos-aarch64`
