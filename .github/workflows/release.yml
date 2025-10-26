@@ -160,8 +160,16 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release-assets
-          # Copy Rust binaries
-          find artifacts -type f ! -name "*.whl" -exec cp {} release-assets/ \;
+          # Copy and rename Rust binaries with platform-specific names
+          for dir in artifacts/*/; do
+            if [[ -d "$dir" ]]; then
+              platform=$(basename "$dir")
+              file=$(find "$dir" -type f ! -name "*.whl" | head -1)
+              if [[ -f "$file" ]]; then
+                cp "$file" "release-assets/$platform"
+              fi
+            fi
+          done
           # Copy Python wheels
           find artifacts -type f -name "*.whl" -exec cp {} release-assets/ \;
           ls -lh release-assets
